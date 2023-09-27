@@ -12,7 +12,6 @@
 #include <unistd.h>
 #include <signal.h>
 #include "alarm.h"
-#include "sendFrame.h"
 
 // Baudrate settings are defined in <asm/termbits.h>, which is
 // included by <termios.h>
@@ -30,7 +29,12 @@
 #define C_SET 0x03
 #define C_UA 0x07
 
-unsigned char SET[5];
+
+
+
+unsigned char SET[5] = {FLAG, A, C_SET, FLAG, FLAG};
+
+
 int fd;
 
 
@@ -44,7 +48,7 @@ int receiveFrame(int fd){
 
     // Returns after 5 chars have been input
     int bytes = read(fd, UA, 5);
-    return 1;
+    printf("read value");
     alarm(0);
     UA[bytes] = '\0'; // Set end of string to '\0', so we can printf
 
@@ -100,7 +104,7 @@ int main(int argc, char *argv[])
     newtio.c_iflag = IGNPAR;
     newtio.c_oflag = 0;
 
-    // Set input mode (non-canonical, no echo,...)
+    // Set input mode (non-canonical, nosen echo,...)
     newtio.c_lflag = 0;
     newtio.c_cc[VTIME] = 0; // Inter-character timer unused
     newtio.c_cc[VMIN] = 5;  // Blocking read until 5 chars received
@@ -124,27 +128,24 @@ int main(int argc, char *argv[])
 
     printf("New termios structure set\n");
 
-
-
     (void)signal(SIGALRM, alarmHandler);
 
 
-
     unsigned char BCC = A ^ C_SET;
+    SET[3] = BCC;
+    
     printf("FLAG = 0x%02X\n", FLAG);
     printf("A = 0x%02X\n", A);
     printf("C = 0x%02X\n", C_SET);
     printf("BCC = 0x%02X\n", BCC);
 
-    // Create string to send
-    SET[0] = FLAG;
-    SET[1] = A;
-    SET[2] = C_SET;
-    SET[3] = BCC;
-    SET[4] = FLAG;
     
-    sendFrame(fd, SET);
+    printf("AlarmCount: %d\n", alarmCount);
+    defineFdAndSet(fd,SET);
+    sendFrame();
+    printf("sent frame\n");
     alarm(3);
+    printf("alarm in 3 seconds\n");
     //printf("popo: %d", receiveFrame(fd));
     receiveFrame(fd);
 
