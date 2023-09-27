@@ -10,6 +10,9 @@
 #include <sys/stat.h>
 #include <termios.h>
 #include <unistd.h>
+#include <signal.h>
+#include "alarm.h"
+#include "sendFrame.h"
 
 // Baudrate settings are defined in <asm/termbits.h>, which is
 // included by <termios.h>
@@ -27,7 +30,33 @@
 #define C_SET 0x03
 #define C_UA 0x07
 
+unsigned char SET[5];
+int fd;
+
+
 volatile int STOP = FALSE;
+
+
+
+int receiveFrame(int fd){
+
+    unsigned char UA[5];
+
+    // Returns after 5 chars have been input
+    int bytes = read(fd, UA, 5);
+    return 1;
+    alarm(0);
+    UA[bytes] = '\0'; // Set end of string to '\0', so we can printf
+
+    printf("bytes: %d\n", bytes); 
+    printf("UA[0]: %d\n", UA[0]);  
+    printf("UA[1]: %d\n", UA[1]);  
+    printf("UA[2]: %d\n", UA[2]);  
+    printf("UA[3]: %d\n", UA[3]);  
+    printf("UA[4]: %d\n", UA[4]);  
+
+
+}
 
 int main(int argc, char *argv[])
 {
@@ -46,7 +75,7 @@ int main(int argc, char *argv[])
 
     // Open serial port device for reading and writing, and not as controlling tty
     // because we don't want to get killed if linenoise sends CTRL-C.
-    int fd = open(serialPortName, O_RDWR | O_NOCTTY);
+    fd = open(serialPortName, O_RDWR | O_NOCTTY);
 
     if (fd < 0)
     {
@@ -96,54 +125,32 @@ int main(int argc, char *argv[])
     printf("New termios structure set\n");
 
 
-    //creating array elements to send
+
+    (void)signal(SIGALRM, alarmHandler);
+
+
 
     unsigned char BCC = A ^ C_SET;
-
     printf("FLAG = 0x%02X\n", FLAG);
     printf("A = 0x%02X\n", A);
     printf("C = 0x%02X\n", C_SET);
     printf("BCC = 0x%02X\n", BCC);
-    
-    //unsigned char * arr = {FLAG, A, C, BCC};
-    //printf("flag: %d\n", arr[0]);
 
     // Create string to send
-    unsigned char SET[5] = {FLAG, A, C_SET, BCC,FLAG};
+    SET[0] = FLAG;
+    SET[1] = A;
+    SET[2] = C_SET;
+    SET[3] = BCC;
+    SET[4] = FLAG;
+    
+    sendFrame(fd, SET);
+    alarm(3);
+    //printf("popo: %d", receiveFrame(fd));
+    receiveFrame(fd);
 
-
-    printf("SET = %s\n", SET);
-
-    for (int i = 0; i < 5; i++)
-    {
-        printf("SET[%d]: 0x%02X\n", i, SET[i]);
-    }
-
-    // In non-canonical mode, '\n' does not end the writing.
-    // Test this condition by placing a '\n' in the middle of the buffer.
-    // The whole buffer must be sent even with the '\n'.
-    //buf[5] = '\n';
-
-    int bytes = write(fd, SET, 5);
-    printf("%d bytes written\n", bytes);
     
 
-
-    unsigned char UA[5];
-
-
-    // Returns after 5 chars have been input
-    int bytes2 = read(fd, UA, 5);
-    UA[bytes2] = '\0'; // Set end of string to '\0', so we can printf
-
-    printf("bytes: %d\n", bytes); 
-    printf("UA[0]: %d\n", UA[0]);  
-    printf("UA[1]: %d\n", UA[1]);  
-    printf("UA[2]: %d\n", UA[2]);  
-    printf("UA[3]: %d\n", UA[3]);  
-    printf("UA[4]: %d\n", UA[4]);  
-
-
+    
 
 
     // Wait until all bytes have been written to the serial port

@@ -1,41 +1,25 @@
-// Alarm example
-//
-// Modified by: Eduardo Nuno Almeida [enalmeida@fe.up.pt]
-
-#include <unistd.h>
-#include <signal.h>
 #include <stdio.h>
+#include "alarm.h"
+#include "sendFrame.h"
 
-#define FALSE 0
-#define TRUE 1
-
-int alarmEnabled = FALSE;
+int alarmEnabled = 0;
 int alarmCount = 0;
 
-// Alarm function handler
-void alarmHandler(int signal)
-{
-    alarmEnabled = FALSE;
-    alarmCount++;
 
-    printf("Alarm #%d\n", alarmCount);
-}
+void alarmHandler(int signal) {
+    
+    printf("jfdkslafjdsaçkl\n");
 
-int main()
-{
-    // Set alarm function handler
-    (void)signal(SIGALRM, alarmHandler);
+    if(alarmCount < 3){
+        sendFrame(fd, SET);
+        alarmEnabled = 1;
+        printf("Timeout/invalid value: Sent frame again (numretries = %d)\n", alarmCount);
+        alarm(3);
+        alarmCount++;
 
-    while (alarmCount < 4)
-    {
-        if (alarmEnabled == FALSE)
-        {
-            alarm(3); // Set alarm to be triggered in 3s
-            alarmEnabled = TRUE;
-        }
     }
-
-    printf("Ending program\n");
-
-    return 0;
+    else{
+        printf("Number of retries exceeded (numretries = %d)\n", alarmCount);
+        //finish = 1;
+    }
 }
