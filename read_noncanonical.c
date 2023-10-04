@@ -19,7 +19,7 @@
 #define FALSE 0
 #define TRUE 1
 
-#define BUF_SIZE 256
+#define BUF_SIZE 1
 
 #define FLAG 0x7E
 #define SENDER_A 0x03
@@ -70,12 +70,12 @@ int main(int argc, char *argv[])
 
     newtio.c_cflag = BAUDRATE | CS8 | CLOCAL | CREAD;
     newtio.c_iflag = IGNPAR;
-    newtio.c_oflag = 0;
+    newtio.c_oflag = 0; 
 
     // Set input mode (non-canonical, no echo,...)
     newtio.c_lflag = 0;
     newtio.c_cc[VTIME] = 0; // Inter-character timer unused
-    newtio.c_cc[VMIN] = 5;  // Blocking read until 5 chars received
+    newtio.c_cc[VMIN] = 0;  // Blocking read until 5 chars received
 
     // VTIME e VMIN should be changed in order to protect with a
     // timeout the reception of the following character(s)
@@ -97,20 +97,23 @@ int main(int argc, char *argv[])
     printf("New termios structure set\n");
 
     // Loop for input
-    unsigned char buf[BUF_SIZE + 1] = {0}; // +1: Save space for the final '\0' char
+    unsigned char buf[BUF_SIZE]; //= {0};  +1: Save space for the final '\0' char
 
     while (STOP == FALSE)
     {
+        
         // Returns after 5 chars have been input
-        int bytes = read(fd, buf, BUF_SIZE);
-        buf[bytes] = '\0'; // Set end of string to '\0', so we can printf
-
-        printf(":%s:%d\n", buf, bytes);
-        printf("buf[0]: %d\n", buf[0]);
-        printf("buf[1]: %d\n", buf[1]);
-        printf("buf[2]: %d\n", buf[2]);
-        printf("buf[3]: %d\n", buf[3]);
-        printf("buf[4]: %d\n", buf[4]);
+        int bytes = read(fd, buf, 1);
+        //buf[bytes] = '\0'; // Set end of string to '\0', so we can printf
+        if(bytes == 0) continue;
+        
+        printf("bytes: %d\n", bytes);
+        printf("buf[0]: %2X\n", buf[0]);
+       /*printf("buf[1]: %2X\n", buf[1]);
+        printf("buf[2]: %2X\n", buf[2]);
+        printf("buf[3]: %2X\n", buf[3]);
+        printf("buf[4]: %2X\n", buf[4]);
+        
         
         if (buf[0] == 'z')
             STOP = TRUE;
@@ -120,6 +123,7 @@ int main(int argc, char *argv[])
 
         int bytes2 = write(fd, buf, 5);
         printf("%d bytes written\n", bytes2);
+        */
     }
 
     // The while() cycle should be changed in order to respect the specifications
@@ -136,3 +140,6 @@ int main(int argc, char *argv[])
 
     return 0;
 }
+
+
+
