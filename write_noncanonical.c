@@ -107,7 +107,7 @@ int main(int argc, char *argv[])
     // Set input mode (non-canonical, nosen echo,...)
     newtio.c_lflag = 0;
     newtio.c_cc[VTIME] = 0; // Inter-character timer unused
-    newtio.c_cc[VMIN] = 5;  // Blocking read until 5 chars received
+    newtio.c_cc[VMIN] = 0;  // Blocking read until 5 chars received
 
     // VTIME e VMIN should be changed in order to protect with a
     // timeout the reception of the following character(s)
@@ -139,16 +139,16 @@ int main(int argc, char *argv[])
     printf("C = 0x%02X\n", C_SET);
     printf("BCC = 0x%02X\n", BCC);
 
-    
-    printf("AlarmCount: %d\n", alarmCount);
-    defineFdAndSet(fd,SET);
-    sendFrame();
-    printf("sent frame\n");
-    alarm(3);
-    printf("alarm in 3 seconds\n");
-    //printf("popo: %d", receiveFrame(fd));
-    receiveFrame(fd);
 
+        printf("AlarmCount: %d\n", alarmCount);
+        defineFdAndSet(fd,SET);
+        sendFrame();
+        printf("sent frame\n");
+        alarm(3);
+        printf("alarm in 3 seconds\n");
+        //printf("popo: %d", receiveFrame(fd));
+        receiveFrame(fd);
+    
     
 
     
