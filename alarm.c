@@ -13,7 +13,7 @@ void defineFdAndSet(int fd, unsigned char* SET){
     SET_alarm = SET;
 }
 
-int sendFrame(){
+void sendFrame(){
 
     printf("SET = %s\n", SET_alarm);
 

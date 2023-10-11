@@ -42,7 +42,7 @@ volatile int STOP = FALSE;
 
 
 
-int receiveFrame(int fd){
+void receiveFrame(int fd){
 
     unsigned char UA[5];
 
@@ -59,7 +59,7 @@ int receiveFrame(int fd){
     printf("UA[3]: %d\n", UA[3]);  
     printf("UA[4]: %d\n", UA[4]);  
 
-
+    
 }
 
 int main(int argc, char *argv[])

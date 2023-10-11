@@ -10,12 +10,9 @@
 extern int alarmEnabled;
 extern int alarmCount;
 
-int fd_alarm;
-unsigned char* SET_alarm;
-
 void defineFdAndSet(int fd, unsigned char* SET);
 
-int sendFrame();
+void sendFrame();
 
 void alarmHandler(int signal);
 

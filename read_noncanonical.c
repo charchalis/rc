@@ -29,6 +29,7 @@
 
 
 
+
 volatile int STOP = FALSE;
 
 int main(int argc, char *argv[])
@@ -99,6 +100,8 @@ int main(int argc, char *argv[])
     // Loop for input
     unsigned char buf[BUF_SIZE]; //= {0};  +1: Save space for the final '\0' char
 
+    char * state = "START";
+
     while (STOP == FALSE)
     {
         
@@ -107,17 +110,37 @@ int main(int argc, char *argv[])
         //buf[bytes] = '\0'; // Set end of string to '\0', so we can printf
         if(bytes == 0) continue;
         
-        printf("bytes: %d\n", bytes);
-        printf("buf[0]: %2X\n", buf[0]);
-       /*printf("buf[1]: %2X\n", buf[1]);
-        printf("buf[2]: %2X\n", buf[2]);
-        printf("buf[3]: %2X\n", buf[3]);
-        printf("buf[4]: %2X\n", buf[4]);
+        printf("byte: %2X\n", buf[0]);
         
-        
-        if (buf[0] == 'z')
+        //state machine
+        switch(buf[0]){
+            case FLAG:
+                if(strcmp(state, "BCC_OK") == 0) state = "STOP";
+                else state = "FLAG_RCV";
+                break;
+            case 0x03: 
+                if(strcmp(state, "A_RCV") == 0) state = "C_RCV";
+                else if(strcmp(state, "FLAG_RCV") == 0) state = "A_RCV";
+                else state = "START";
+                break;
+            case SENDER_A ^ C_SET:
+                if(strcmp(state, "C_RCV") == 0) state = "BCC_OK";
+                else state = "START";
+                break;
+            default: state = "START";
+
+        }
+
+        printf("state: %s\n", state);
+    
+
+        if (strcmp(state,"STOP") == 0){
             STOP = TRUE;
+            printf("STOP\n");
+        }
+
             
+        /*
         buf[2] = C_UA;
         buf[3] = buf[1] ^ C_UA;
 
