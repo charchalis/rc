@@ -35,8 +35,8 @@
 
 typedef enum
 {
-   LlTx,
-   LlRx,
+   transmitter,
+   receiver,
 } LinkLayerRole;
 
 typedef enum
@@ -46,7 +46,7 @@ typedef enum
    A_RCV,
    C_RCV,
    BCC1_OK,
-   STOP,
+   STOP_STATE,
    DATA_FOUND_ESC,
    READING_DATA,
    DISCONNECTED,

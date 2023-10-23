@@ -8,8 +8,8 @@
 #include "applicationLayer.h"
 
 #define BAUDRATE 9600
-#define N_TRIES 3
-#define TIMEOUT 4
+#define N_TRIES 2
+#define TIMEOUT 1
 
 // Arguments:
 //   $1: /dev/ttySxx
