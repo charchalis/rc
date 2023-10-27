@@ -86,6 +86,15 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
         }
         
         printf("frameSize_llwrite: %d\n", frameSize_llwrite);
+
+
+        printf("\n\t---- LLCLOSE TRANSMITTER ----\n\n");
+        
+        if(llclose(fd, transmitter) == -2) {
+            printf("llclose failed\n");
+            perror("llclose");
+            exit(-2);
+        }
     }
 
     else if(connectionParameters.role == receiver) {
@@ -97,14 +106,15 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
         int bytes = llread(fd, packet);
         
         printf("bytes: %d\n", bytes);
+
+        printf("\n\t---- LLCLOSE RECEIVER ----\n\n");
+        
+        if(llclose(fd, receiver) == -2) {
+            printf("llclose failed\n");
+            perror("llclose");
+            exit(-2);
+        }
     }
     
 
-    printf("\n\t---- LLCLOSE ----\n\n");
-    
-    if(llclose(fd) == -1) {
-        printf("llclose failed\n");
-        perror("llclose");
-        exit(-1);
-    }
 }

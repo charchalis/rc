@@ -394,7 +394,7 @@ int llwrite(int fd, const unsigned char *buffer, int bufferLength) {
     if(accepted) return frameSize;
     else{
         printf("not accepted\n");
-        llclose(fd);
+        llclose(fd, transmitter);
         return -1;
     }
 
@@ -402,21 +402,18 @@ int llwrite(int fd, const unsigned char *buffer, int bufferLength) {
 
 }
 
-int llclose(int fd){
-
+int llclose(int fd, LinkLayerRole role){
+    
     LinkLayerState state = START;
     unsigned char byte;
     (void) signal(SIGALRM, alarmHandler);
     
-    while (retransmitions != 0 && state != STOP_STATE) {
-                
-        printf("llclose: sending disc\n");
-        sendFrame(fd, A_ER, C_DISC); //send Disc (Tx)
-        alarm(timeout);
-        alarmEnabled = FALSE;
-                
-        printf("llclose: receiving disc\n");
-        while (alarmEnabled == FALSE && state != STOP_STATE) {
+
+    if(role == receiver){
+        printf("llclose receiver\n");
+        
+        printf("analysing disc\n");
+        while (1) {
             if (read(fd, &byte, 1) > 0) {
                 printf("llclose state: %d\n", state);
                 printf("byte: %d\n", byte);
@@ -446,16 +443,131 @@ int llclose(int fd){
                         break;
                 }
             }
+            if(state == STOP_STATE){
+                sendFrame(fd, A_RE, C_DISC);
+                break;
+            }
         } 
-        retransmitions--;
-    }
-    
-    printf("llclose final state: %d\n", state);
 
-    if (state != STOP_STATE) return -1;
-    printf("llclose: sending ua frame\n");
-    sendFrame(fd, A_ER, C_UA);
-    return close(fd);
+        printf("analysing ua\n");
+
+        time_t currentTime;
+        time(&currentTime);
+        printf("current time: %ld\n", currentTime);
+
+
+        state = START;
+
+        while (1) {
+            printf("analysing ua loop\n");
+            if (read(fd, &byte, 1) > 0) {
+                printf("llclose state: %d\n", state);
+                printf("byte: %d\n", byte);
+                switch (state) {
+                    case START:
+                        if (byte == FLAG) state = FLAG_RCV;
+                        break;
+                    case FLAG_RCV:
+                        if (byte == A_RE) state = A_RCV;
+                        else if (byte != FLAG) state = START;
+                        break;
+                    case A_RCV:
+                        if (byte == C_UA) state = C_RCV;
+                        else if (byte == FLAG) state = FLAG_RCV;
+                        else state = START;
+                        break;
+                    case C_RCV:
+                        if (byte == (A_RE ^ C_UA)) state = BCC1_OK;
+                        else if (byte == FLAG) state = FLAG_RCV;
+                        else state = START;
+                        break;
+                    case BCC1_OK:
+                        if (byte == FLAG) state = STOP_STATE;
+                        else state = START;
+                        printf("state: %d", STOP_STATE);
+                        break;
+                    default: 
+                        break;
+                }
+            }else{printf("nothing to read\n");}
+            if(state == STOP_STATE){
+                close(fd);
+                break;
+            }
+        }
+        
+
+    }
+    else {
+        while (retransmitions != 0 && state != STOP_STATE) {
+                    
+            printf("llclose: sending disc\n");
+            sendFrame(fd, A_ER, C_DISC); //send Disc (Tx)
+            alarm(timeout);
+            alarmEnabled = FALSE;
+                    
+            printf("llclose: receiving disc\n");
+            while (alarmEnabled == FALSE && state != STOP_STATE) {
+                if (read(fd, &byte, 1) > 0) {
+                    printf("llclose state: %d\n", state);
+                    printf("byte: %d\n", byte);
+                    switch (state) {
+                        case START:
+                            if (byte == FLAG) state = FLAG_RCV;
+                            break;
+                        case FLAG_RCV:
+                            if (byte == A_RE) state = A_RCV;
+                            else if (byte != FLAG) state = START;
+                            break;
+                        case A_RCV:
+                            if (byte == C_DISC) state = C_RCV;
+                            else if (byte == FLAG) state = FLAG_RCV;
+                            else state = START;
+                            break;
+                        case C_RCV:
+                            if (byte == (A_RE ^ C_DISC)) state = BCC1_OK;
+                            else if (byte == FLAG) state = FLAG_RCV;
+                            else state = START;
+                            break;
+                        case BCC1_OK:
+                            if (byte == FLAG) state = STOP_STATE;
+                            else state = START;
+                            break;
+                        default: 
+                            break;
+                    }
+                }
+            } 
+            retransmitions--;
+        }
+        
+        
+        printf("llclose final state: %d\n", state);
+
+        if (state != STOP_STATE) return -1;
+
+        //alarmEnabled = FALSE;
+        //retrasmissions = 2;
+
+        //while (alarmEnabled == FALSE ){
+            
+            //retransmissions--; 
+        //}
+        
+        printf("llclose: sending ua frame\n");
+
+        
+        sleep(2);
+        
+        printf("FICAMOS NA PARTE EM QUE O RECEIVER NAO LE O UA FRAME. PRESUMIDAMENTE POR CAUSA DOS MULTIPPLOS WHILES");
+
+        time_t currentTime;
+        time(&currentTime);
+        printf("current time: %ld\n", currentTime);
+
+        sendFrame(fd, A_ER, C_UA);
+        return close(fd);
+    }
 }
 
 
