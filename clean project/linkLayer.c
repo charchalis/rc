@@ -171,7 +171,6 @@ int llopen(LinkLayer link) {
                                 else state = START;
                                 break;
                             case BCC1_OK:
-                                printf("Fdsafjkdslaçfdsa");
                                 if (byte == FLAG) state = STOP_STATE;
                                 else state = START;
                                 printf("state: %d", STOP_STATE);
@@ -228,6 +227,7 @@ int llopen(LinkLayer link) {
             }  
             
             printf("response\n");
+            printf("state: %d\n", state);
             
             // Send response frame (C_UA) 
             sendFrame(fd, A_RE, C_UA);
@@ -321,12 +321,11 @@ int llread(int fd, unsigned char *buffer){
 }
 
 int llwrite(int fd, const unsigned char *buffer, int bufferLength) {
+    
+    printf("llwrite function\n");
 
-    //TODO: Payload/Packet (beez)
-    //TODO: Stuffing
-    //TODO: Frame it and send it (F,A,C,BCC,...,F)
-    //TODO: Receive RRx
-
+    printf("stuffing\n");
+    
     int frameSize = 6+bufferLength;  //nao sei explicar
     unsigned char *frame = (unsigned char *) malloc(frameSize); //frame fica com a length de frameSize
     frame[0] = FLAG;
@@ -352,6 +351,9 @@ int llwrite(int fd, const unsigned char *buffer, int bufferLength) {
 
     int currentTransmition = 0;
     int rejected = 0, accepted = 0;
+    
+
+    printf("trying to send to rx\n");
 
     while (currentTransmition < retransmitions) { 
         alarmEnabled = FALSE;
@@ -361,7 +363,10 @@ int llwrite(int fd, const unsigned char *buffer, int bufferLength) {
         while (alarmEnabled == FALSE && !rejected && !accepted) {
 
             write(fd, frame, j);
+            printf("write successful\n");
             unsigned char result = readControlFrame(fd);
+            
+            printf("result: %d\n", result);
             
             if(!result){
                 continue;
@@ -376,13 +381,19 @@ int llwrite(int fd, const unsigned char *buffer, int bufferLength) {
             else continue;
 
         }
-        if (accepted) break;
+        if (accepted){
+            printf("receiver accepted the frame sent\n");
+            break;
+        }
         currentTransmition++;
     }
+    
+    printf("about to free frame\n");
     
     free(frame);
     if(accepted) return frameSize;
     else{
+        printf("not accepted\n");
         llclose(fd);
         return -1;
     }
@@ -399,18 +410,22 @@ int llclose(int fd){
     
     while (retransmitions != 0 && state != STOP_STATE) {
                 
+        printf("llclose: sending disc\n");
         sendFrame(fd, A_ER, C_DISC); //send Disc (Tx)
         alarm(timeout);
         alarmEnabled = FALSE;
                 
+        printf("llclose: receiving disc\n");
         while (alarmEnabled == FALSE && state != STOP_STATE) {
             if (read(fd, &byte, 1) > 0) {
+                printf("llclose state: %d\n", state);
+                printf("byte: %d\n", byte);
                 switch (state) {
                     case START:
                         if (byte == FLAG) state = FLAG_RCV;
                         break;
                     case FLAG_RCV:
-                        if (byte == A_RE) state = A_RCV;
+                        if (byte == A_ER) state = A_RCV;
                         else if (byte != FLAG) state = START;
                         break;
                     case A_RCV:
@@ -419,7 +434,7 @@ int llclose(int fd){
                         else state = START;
                         break;
                     case C_RCV:
-                        if (byte == (A_RE ^ C_DISC)) state = BCC1_OK;
+                        if (byte == (A_ER ^ C_DISC)) state = BCC1_OK;
                         else if (byte == FLAG) state = FLAG_RCV;
                         else state = START;
                         break;
@@ -434,8 +449,11 @@ int llclose(int fd){
         } 
         retransmitions--;
     }
+    
+    printf("llclose final state: %d\n", state);
 
     if (state != STOP_STATE) return -1;
+    printf("llclose: sending ua frame\n");
     sendFrame(fd, A_ER, C_UA);
     return close(fd);
 }
