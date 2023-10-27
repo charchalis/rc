@@ -24,11 +24,11 @@ FILE = pinguim.gif
 all: $(OUTPUT)
 
 
-write: compile 
+tx: compile 
 	./$(OUTPUT) $(PORT10) $(WRITE) $(FILE)
 
-read: compile
-	./$(OUTPUT) ./$(OUTPUT) $(PORT11) $(READ) $(FILE)
+rx: compile
+	./$(OUTPUT) $(PORT11) $(READ) $(FILE)
 
 
 # Compile the source file
