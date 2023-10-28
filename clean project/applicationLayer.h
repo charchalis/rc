@@ -3,6 +3,12 @@
 
 #include <stdio.h>
 
+#define PCK_SIZE 512
+
+#define CTRLDATA 1
+#define CTRLSTART 2
+#define CTRLEND 3
+
 
 // Application layer main function.
 // Arguments:
@@ -15,6 +21,8 @@
 
 void applicationLayer(const char *serialPort, const char *role, int baudRate,
                       int nTries, int timeout, const char *filename);
+
+int tlv(unsigned char *address, int* type, int* length, int** value);
 
 
 #endif // _APPLICATION_LAYER_H_

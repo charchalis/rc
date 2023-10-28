@@ -11,16 +11,28 @@ unsigned char tramaNr = 0;
 
 int sendFrame(int fd, unsigned char A, unsigned char C){
     unsigned char FRAME[5] = {FLAG, A, C, A ^ C, FLAG};
+    
+    printf("printing control frame to send\n");
+    for(int i = 0; i < 5; i++){
+        printf("frame[%d]: %d\n", i, FRAME[i]);
+    }
     return write(fd, FRAME, 5);
 }
 
 unsigned char readControlFrame(int fd){
 
     unsigned char byte, cField = 0;
+    int stopp = 0;
     LinkLayerState state = START;
+
+    printf("READING CONTROL FRAME\n");
     
     while (state != STOP_STATE && alarmEnabled == FALSE) {  
-        if (read(fd, &byte, 1) > 0 || 1) {
+        if (read(fd, &byte, 1) > 0) {
+            printf("state: %d\n", state);
+            printf("byte: %d\n", byte);
+            stopp++;
+            if(stopp > 10) break;
             switch (state) {
                 case START:
                     if (byte == FLAG) state = FLAG_RCV;
@@ -226,8 +238,8 @@ int llopen(LinkLayer link) {
                 }
             }  
             
-            printf("response\n");
-            printf("state: %d\n", state);
+            printf("sending ua frame\n");
+            //printf("state: %d\n", state);
             
             // Send response frame (C_UA) 
             sendFrame(fd, A_RE, C_UA);
@@ -245,12 +257,16 @@ int llopen(LinkLayer link) {
 
 int llread(int fd, unsigned char *buffer){
     
-    unsigned char byte, c;
+    printf("LLREEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEAD\n");
+    
+    unsigned char byte, c_type;
     int i = 0;
     LinkLayerState state = START;
 
     while (state != STOP_STATE) {  
         if (read(fd, &byte, 1) > 0) {
+            printf("state: %d\n", state);
+            printf("byte: %d\n", byte);
             switch (state) {
                 case START:
                     if (byte == FLAG) state = FLAG_RCV;
@@ -262,7 +278,7 @@ int llread(int fd, unsigned char *buffer){
                 case A_RCV:
                     if (byte == C_I0 || byte == C_I1){
                         state = C_RCV;
-                        c = byte;   
+                        c_type = byte;   
                     }
                     else if (byte == FLAG) state = FLAG_RCV;
                     else if (byte == C_DISC) {
@@ -272,7 +288,7 @@ int llread(int fd, unsigned char *buffer){
                     else state = START;
                     break;
                 case C_RCV:
-                    if (byte == (A_ER ^ c)) state = DATA;
+                    if (byte == (A_ER ^ c_type)) state = DATA;
                     else if (byte == FLAG) state = FLAG_RCV;
                     else state = START;
                     break;
@@ -288,6 +304,8 @@ int llread(int fd, unsigned char *buffer){
                             acc ^= buffer[j];
 
                         if (bcc2 == acc){
+                            printf("llread: reached stop state\n");
+                            printf("llread: sending control frame\n");
                             state = STOP_STATE;
                             sendFrame(fd, A_RE, tramaNr == 0 ? C_RR1: C_RR0);
                             tramaNr = tramaNr == 0 ? 1 : 0;
@@ -322,9 +340,9 @@ int llread(int fd, unsigned char *buffer){
 
 int llwrite(int fd, const unsigned char *buffer, int bufferLength) {
     
-    printf("llwrite function\n");
+    //printf("llwrite function\n");
 
-    printf("stuffing\n");
+    //printf("stuffing\n");
     
     int frameSize = 6+bufferLength;  //nao sei explicar
     unsigned char *frame = (unsigned char *) malloc(frameSize); //frame fica com a length de frameSize
@@ -353,7 +371,7 @@ int llwrite(int fd, const unsigned char *buffer, int bufferLength) {
     int rejected = 0, accepted = 0;
     
 
-    printf("trying to send to rx\n");
+    //printf("trying to send to rx\n");
 
     while (currentTransmition < retransmitions) { 
         alarmEnabled = FALSE;
@@ -366,7 +384,7 @@ int llwrite(int fd, const unsigned char *buffer, int bufferLength) {
             printf("write successful\n");
             unsigned char result = readControlFrame(fd);
             
-            printf("result: %d\n", result);
+            printf("reading Control Frame result: %d\n", result);
             
             if(!result){
                 continue;
@@ -388,13 +406,13 @@ int llwrite(int fd, const unsigned char *buffer, int bufferLength) {
         currentTransmition++;
     }
     
-    printf("about to free frame\n");
+    //printf("about to free frame\n");
     
     free(frame);
     if(accepted) return frameSize;
     else{
-        printf("not accepted\n");
-        llclose(fd, transmitter);
+        printf("receiver did not accept the frame sent\n");
+        //llclose(fd, transmitter);
         return -1;
     }
 
@@ -412,8 +430,9 @@ int llclose(int fd, LinkLayerRole role){
     if(role == receiver){
         printf("llclose receiver\n");
         
-        printf("analysing disc\n");
+        ///printf("llclose: analysing disc\n");
         while (1) {
+            int c_type;
             if (read(fd, &byte, 1) > 0) {
                 printf("llclose state: %d\n", state);
                 printf("byte: %d\n", byte);
@@ -426,12 +445,13 @@ int llclose(int fd, LinkLayerRole role){
                         else if (byte != FLAG) state = START;
                         break;
                     case A_RCV:
-                        if (byte == C_DISC) state = C_RCV;
+                        if (byte == C_DISC){ state = C_RCV; c_type = C_DISC; }
+                        else if (byte == C_UA) { state = C_RCV; c_type = C_UA; }
                         else if (byte == FLAG) state = FLAG_RCV;
                         else state = START;
                         break;
                     case C_RCV:
-                        if (byte == (A_ER ^ C_DISC)) state = BCC1_OK;
+                        if (byte == (A_ER ^ c_type)) state = BCC1_OK;
                         else if (byte == FLAG) state = FLAG_RCV;
                         else state = START;
                         break;
@@ -444,59 +464,17 @@ int llclose(int fd, LinkLayerRole role){
                 }
             }
             if(state == STOP_STATE){
+                if(c_type == C_UA){
+                    printf("closing llclose\n");
+                    return close(fd);
+                }
+                
+                printf("llclose: sending disc response frame\n");
                 sendFrame(fd, A_RE, C_DISC);
-                break;
+                state = START;
+                //break;
             }
         } 
-
-        printf("analysing ua\n");
-
-        time_t currentTime;
-        time(&currentTime);
-        printf("current time: %ld\n", currentTime);
-
-
-        state = START;
-
-        while (1) {
-            printf("analysing ua loop\n");
-            if (read(fd, &byte, 1) > 0) {
-                printf("llclose state: %d\n", state);
-                printf("byte: %d\n", byte);
-                switch (state) {
-                    case START:
-                        if (byte == FLAG) state = FLAG_RCV;
-                        break;
-                    case FLAG_RCV:
-                        if (byte == A_RE) state = A_RCV;
-                        else if (byte != FLAG) state = START;
-                        break;
-                    case A_RCV:
-                        if (byte == C_UA) state = C_RCV;
-                        else if (byte == FLAG) state = FLAG_RCV;
-                        else state = START;
-                        break;
-                    case C_RCV:
-                        if (byte == (A_RE ^ C_UA)) state = BCC1_OK;
-                        else if (byte == FLAG) state = FLAG_RCV;
-                        else state = START;
-                        break;
-                    case BCC1_OK:
-                        if (byte == FLAG) state = STOP_STATE;
-                        else state = START;
-                        printf("state: %d", STOP_STATE);
-                        break;
-                    default: 
-                        break;
-                }
-            }else{printf("nothing to read\n");}
-            if(state == STOP_STATE){
-                close(fd);
-                break;
-            }
-        }
-        
-
     }
     else {
         while (retransmitions != 0 && state != STOP_STATE) {
@@ -542,9 +520,9 @@ int llclose(int fd, LinkLayerRole role){
         }
         
         
-        printf("llclose final state: %d\n", state);
-
         if (state != STOP_STATE) return -1;
+        
+        printf("llclose: valid frame\n");
 
         //alarmEnabled = FALSE;
         //retrasmissions = 2;
@@ -556,16 +534,8 @@ int llclose(int fd, LinkLayerRole role){
         
         printf("llclose: sending ua frame\n");
 
-        
-        sleep(2);
-        
-        printf("FICAMOS NA PARTE EM QUE O RECEIVER NAO LE O UA FRAME. PRESUMIDAMENTE POR CAUSA DOS MULTIPPLOS WHILES");
-
-        time_t currentTime;
-        time(&currentTime);
-        printf("current time: %ld\n", currentTime);
-
         sendFrame(fd, A_ER, C_UA);
+        printf("closing llclose\n");
         return close(fd);
     }
 }

@@ -44,16 +44,16 @@ typedef enum
 
 typedef enum
 {
-   START,
-   FLAG_RCV,
-   A_RCV,
-   C_RCV,
-   BCC1_OK,
-   STOP_STATE,
-   DATA_FOUND_ESC,
-   DATA,
-   DISCONNECTED,
-   BCC2_OK
+   START,            //0
+   FLAG_RCV,         //1
+   A_RCV,            //2
+   C_RCV,            //3
+   BCC1_OK,          //4
+   STOP_STATE,       //5
+   DATA_FOUND_ESC,   //6
+   DATA,             //7
+   DISCONNECTED,     //8
+   BCC2_OK           //9
 } LinkLayerState;
 
 typedef struct
