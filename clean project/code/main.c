@@ -8,8 +8,8 @@
 #include "application_layer.h"
 
 #define BAUDRATE 9600
-#define N_TRIES 2
-#define TIMEOUT 1
+#define N_TRIES 10
+#define TIMEOUT 3
 
 // Arguments:
 //   $1: /dev/ttySxx
@@ -25,7 +25,6 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
-    srand(time(NULL));
     const char *serialPort = argv[1];
     const char *role = argv[2];
     const char *filename = argv[3];

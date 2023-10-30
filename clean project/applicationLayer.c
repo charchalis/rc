@@ -1,5 +1,5 @@
-#include "applicationLayer.h"
-#include "linkLayer.h"
+#include "include/application_layer.h"
+#include "include/link_layerayer.h"
 #include <string.h>
 #include <fcntl.h>
 #include <stdio.h>
@@ -69,7 +69,7 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
         struct stat st; //to retrieve file information
         int file_size = (stat(filename, &st) == 0) ? st.st_size : 0;
         printf("file_size from stat: %d\n", file_size);
-        printf("file_permissions stat: %d\n", st.st_mode & 07777);
+        printf("file_permissions stat: %d\n", st.st_mode & 07777);  //wrong permissions for some reason
 
         packet[0] = CTRLSTART;
         packet[1] = 0;
