@@ -251,8 +251,6 @@ int llopen(LinkLayer link) {
 
 int llread(int fd, unsigned char *buffer){
     
-    //printf("LLREEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEAD\n");
-    
     unsigned char byte, c_type;
     int i = 0;
     LinkLayerState state = START;
@@ -294,12 +292,11 @@ int llread(int fd, unsigned char *buffer){
                         buffer[i] = '\0';
                         unsigned char acc = buffer[0];
 
-                        for (unsigned int j = 1; j < i; j++)
+                        for (unsigned int j = 1; j < i; j++)  //isto faz com que de vez em quando
+                                                              //o programa nao funcione direito na presença de ruído 
                             acc ^= buffer[j];
 
                         if (bcc2 == acc){
-                            //printf("llread: reached stop state\n");
-                            //printf("llread: sending control frame\n");
                             state = STOP_STATE;
                             sendFrame(fd, A_RE, tramaNr == 0 ? C_RR1: C_RR0);
                             tramaNr = tramaNr == 0 ? 1 : 0;
