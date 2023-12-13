@@ -1,0 +1,79 @@
+fazer http e ftp
+
+rfc (request for comments)
+
+ftp://user:password@host/path/file
+
+parte de C (fazer em casa) (procurar no dockerhub um ftp server):
+    1 - parse do link (regex)(tem de ter ':' , '@' e '/')
+    2 - abrir socket (port)
+    3 - authentication
+    4 - Passive mode e dar parse da resposta
+    5 - Socket Data e receive data
+    6 - close
+
+
+parte de rede (tem de ser feito na sala de laboratorio):
+    
+    layers:
+	1 - physical (cabos)
+	2 - linkLayer (switching) (MAC address)
+	3 - network (router) (entre redes)
+	4 - transport (tcp/ip)
+	5 - applicationLayer (portas (ex-> :8000) )
+
+   ----- PORTAS É LAYER 4 ----
+
+
+    desenvolver rede (nat acho eu, not sure):
+	temos de fazer:
+
+	    duas maquinas (TUX2 e TUX3) em duas redes diferentes:
+		endereco da primeira maquina -> 172.16.Y0.0/24 (24 significa que os primeiros 24 de 32 bytes sao o identificador de rede, os ultimos 8 bytes sao do dispositivo)
+		endereco da segunda maquina -> 172.16.Y1.0/24 
+
+		(o primeiro endereco do dispositivo (tudo 0s) é o endereco do ip. o ultimo endereco do dispositivo (... .255) é o endereco de broadcast (quando o pc se liga á net o gajo manda um pedido de ip atraves do endereco de broadcast))
+
+		exemplo:	
+		    192.168.0.0/23  ====>  xxxxxxxx.xxxxxxxx.xxxxxxxx | 0.00000000
+		    xxxxxxxx.xxxxxxxx.xxxxxxxx | 1.11111111  ====>  192.168.3.255
+
+		numero de enderecos de dispositivos = 2^(32 - mask) - 1 - 2
+
+
+	    
+	    terceira maquina (TUX4) (primeiro endereco é 254) decide se as outras duas maquinas podem comunicar entre si
+
+
+
+
+Tux fica sempre off da net 
+
+Liguei o switch ao tux
+
+Config da porta no gtk
+
+System Reset configs. No tux 4
+
+Credenciais na mesa depois do reset admin e blank
+
+Reconfigured no 3 tmb
+
+Depois config dos ips como ta no guide 
+
+Ping com o ip do outro
+
+O delete arp faz com que o ip não saiba para quem tem de mandar, então qnd se faz ping demora mais 
+
+
+----------------------------------------------
+
+exp1:
+
+eth0:
+    IP: 172.16.10.254
+    MAC: 00:21:5a:c3:78:70
+
+eth1:
+    IP: 172.16.10.1
+    MAC: 00:c0:df:08:d5:b0
