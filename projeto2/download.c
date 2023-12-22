@@ -101,8 +101,8 @@ int main(int argc, char **argv) {
     buf[bytesRead] = '\0';
     printf("%s\n",buf);
 
-    if(strncmp(buf,"331 Please specify the password.",32) != 0) {
-        perror("331 Please specify the password.\n");
+    if(strncmp(buf,"331 Please type the password.",32) != 0) {
+        perror("331 Please type the password.\n");
         exit(-1);
     }
     
@@ -130,22 +130,25 @@ int main(int argc, char **argv) {
         exit(-1);
     }
 
-    int h1 = 0, h2 = 0, h3 = 0, h4 = 0, p1 = 0, p2 = 0, pasvport;
-    sscanf(buf,"227 Entering Passive Mode (%i,%i,%i,%i,%i,%i).",&h1,&h2,&h3,&h4,&p1,&p2);
+    int ip1 = 0, ip2 = 0, ip3 = 0, ip4 = 0;
+    int p1 = 0, p2 = 0;
+    int pasvport;
+
+    sscanf(buf,"227 Entering Passive Mode (%i,%i,%i,%i,%i,%i).",&ip1,&ip2,&ip3,&ip4,&p1,&p2);
     pasvport = p1*256+p2;
 
 
     //server address handling
     struct sockaddr_in server_addrC;
-    sprintf(buf,"%i.%i.%i.%i",h1,h2,h3,h4);
+    sprintf(buf,"%i.%i.%i.%i",ip1,ip2,ip3,ip4);
     bzero((char*) &server_addrC,sizeof(server_addrC));
     server_addrC.sin_family = AF_INET;
     server_addrC.sin_addr.s_addr = inet_addr(buf); //32 bit Internet address network byte ordered
     server_addrC.sin_port = htons(pasvport); //server TCP port must be network byte ordered
 
-    int sockfdC;
-    if ((sockfdC = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-        perror("socketfdC\n");
+    int sock;
+    if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+        perror("sock\n");
         exit(-1);
     }
 
