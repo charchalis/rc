@@ -153,7 +153,7 @@ int main(int argc, char **argv) {
     }
 
     //connect to the server
-    if (connect(sockfdC,(struct sockaddr*) &server_addrC,sizeof(server_addrC)) < 0) {
+    if (connect(sock,(struct sockaddr*) &server_addrC,sizeof(server_addrC)) < 0) {
         perror("connect\n");
         exit(-1);
     }
@@ -189,7 +189,7 @@ int main(int argc, char **argv) {
         exit(-1);
     }
 
-    while((bytesRead = read(sockfdC,buf,MAX_SIZE)) > 0){
+    while((bytesRead = read(sock,buf,MAX_SIZE)) > 0){
         fwrite(buf,1,bytesRead,fd);
         //printf("%s",buf);
     }
@@ -224,7 +224,7 @@ int main(int argc, char **argv) {
         exit(-1);
     }
 
-    if (close(sockfdC) < 0) {
+    if (close(sock) < 0) {
         perror("close sockfdC\n");
         exit(-1);
     }
